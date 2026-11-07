@@ -1,0 +1,34 @@
+name: 2-Tier Quant Options Engine
+
+on:
+  schedule:
+    # FREE + VIP Summary: 9:40 AM and 4:05 PM EST (Mon-Fri)
+    - cron: '40 14 * * 1-5'
+    - cron: '5 21 * * 1-5'
+    # VIP-ONLY Intraday + Free Redacted FOMO Teaser: Every 30 mins during market hours
+    - cron: '10,35 15-20 * * 1-5'
+  workflow_dispatch:
+
+jobs:
+  run-quant-bot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install libraries
+        run: pip install yfinance pandas matplotlib requests
+      - name: Run Scanner
+        env:
+          FREE_WEBHOOK_URL: ${{ secrets.FREE_WEBHOOK_URL }}
+          VIP_WEBHOOK_URL: ${{ secrets.VIP_WEBHOOK_URL }}
+        run: |
+          HOUR_MIN=$(date -u +"%H:%M")
+          if [[ "$HOUR_MIN" == "14:40" || "$HOUR_MIN" == "21:05" ]]; then
+            python flow_scanner.py free
+          else
+            python flow_scanner.py vip
+          fi
